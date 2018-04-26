@@ -16,6 +16,10 @@ data_input <-  data[ , !(names(data) %in% to_drop)]
 head(data_input)
 scaled_data_input <- scale(data_input)
 
+# Convert Type column to a factor so caret will recognize this as a classification problem 
+data$Type <- as.factor(data$Type)
+levels(data$Type) <- c("building_float", "building_non_float", "vehicle_float", "vehicle_non_float", "containers", "tableware")
+
 # Bind the scaled input data with the Type column and verify the result
 scaled_data <- cbind(scaled_data_input, Type=data$Type)
 head(scaled_data)
@@ -28,22 +32,44 @@ index <- sample.int(n = nrow(scaled_data), size = floor(0.75*nrow(scaled_data)),
 train <- as.data.frame(scaled_data[index, ])
 test <- as.data.frame(scaled_data[-index, ])
 
+train$Type <- as.factor(train$Type)
+levels(train$Type) <- c("building_float", "building_non_float", "vehicle_float", "vehicle_non_float", "containers", "tableware")
+test$Type <- as.factor(test$Type)
+levels(test$Type) <- c("building_float", "building_non_float", "vehicle_float", "vehicle_non_float", "containers", "tableware")
+
 head(train)
 
+# Use cross-validation to avoid overfitting 
+control <- trainControl(method="cv", number=10)
+metric <- "Accuracy"
+
 ## Create some predictive models
-# General linear fit
-lm_fit <- glm(Type~., data=train)
-summary(lm_fit)
+# LDA
+set.seed(5)
+fit.lda <- train(Type~., data=train, method="lda", metric=metric, trControl=control)
 
-# Compare the linear model predictions with the actual Type 
-lm_predict <- predict(lm_fit, test)
-lm_predictions <- cbind(test, PredictedType=round(lm_predict))
+# CART
+set.seed(5)
+fit.cart <- train(Type~., data=train, method="rpart", metric=metric, trControl=control)
 
-# Calculate the RMSE
-lm_RMSE <- sqrt(sum((lm_predict - test$Type)^2)/nrow(test))
-print(lm_RMSE)
+# kNN
+set.seed(5)
+fit.knn <- train(Type~., data=train, method="knn", metric=metric, trControl=control)
 
-# The RMSE for the linear model is 1.172145, which will be the benchmark for now
+# SVM
+set.seed(5)
+fit.svm <- train(Type~., data=train, method="svmRadial", metric=metric, trControl=control)
 
+# Random Forest
+set.seed(5)
+fit.rf <- train(Type~., data=train, method="rf", metric=metric, trControl=control)
 
+results <- resamples(list(lda=fit.lda, cart=fit.cart, knn=fit.knn, svm=fit.svm, rf=fit.rf))
+summary(results)
 
+dotplot(results)
+
+print(fit.rf)
+
+predictions <- predict(fit.rf, test)
+confusionMatrix(predictions, test$Type)
