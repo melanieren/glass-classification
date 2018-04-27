@@ -10,6 +10,40 @@ library(caret)
 head(data)
 summary(data)
 
+## Exploratory data analysis
+# Univariate
+# Histogram
+par(mfrow=c(1,9))
+for(i in 1:9) {
+	hist(data[,i], main=names(data)[i])
+}
+
+# Boxplot 
+par(mfrow=c(1,9))
+for(i in 1:9) {
+	boxplot(data[,i], main=names(data)[i])
+}
+
+# Multivariate
+# Correlation plot 
+install.packages("corrplot")
+library(corrplot)
+correlations <- cor(data[,1:9])
+corrplot(correlations, method="circle")
+
+# Scatterplot matrix by class
+pairs(Type~.,data=data,col=data$Type)
+
+# Density by class
+x <- data[,1:9]
+y <- data[,10]
+scales <- list(x=list(relation="free"), y=list(relation="free"))
+featurePlot(x=x, y=y, plot="density", scales=scales)
+
+# Boxplots by class
+featurePlot(x=x, y=y, plot="box")
+
+## Prepare the data for modelling
 # Scale the column values, except for the Type column (output column)
 to_drop <- c('Type')
 data_input <-  data[ , !(names(data) %in% to_drop)]
@@ -46,30 +80,37 @@ metric <- "Accuracy"
 ## Create some predictive models
 # LDA
 set.seed(5)
-fit.lda <- train(Type~., data=train, method="lda", metric=metric, trControl=control)
+fit_lda <- train(Type~., data=train, method="lda", metric=metric, trControl=control)
 
 # CART
 set.seed(5)
-fit.cart <- train(Type~., data=train, method="rpart", metric=metric, trControl=control)
+fit_cart <- train(Type~., data=train, method="rpart", metric=metric, trControl=control)
 
 # kNN
 set.seed(5)
-fit.knn <- train(Type~., data=train, method="knn", metric=metric, trControl=control)
+fit_knn <- train(Type~., data=train, method="knn", metric=metric, trControl=control)
 
 # SVM
 set.seed(5)
-fit.svm <- train(Type~., data=train, method="svmRadial", metric=metric, trControl=control)
+fit_svm <- train(Type~., data=train, method="svmRadial", metric=metric, trControl=control)
 
 # Random Forest
 set.seed(5)
-fit.rf <- train(Type~., data=train, method="rf", metric=metric, trControl=control)
+fit_rf <- train(Type~., data=train, method="rf", metric=metric, trControl=control)
 
-results <- resamples(list(lda=fit.lda, cart=fit.cart, knn=fit.knn, svm=fit.svm, rf=fit.rf))
+# Neural Net
+set.seed(5)
+fit_nnet <- train(Type~., data=train, method="nnet", metric=metric, trControl=control)
+
+# Compare the results of the models 
+results <- resamples(list(lda=fit_lda, cart=fit_cart, knn=fit_knn, svm=fit_svm, rf=fit_rf, nnet=fit_nnet))
+
 summary(results)
-
 dotplot(results)
 
-print(fit.rf)
+# The best model based on accuracy 
+print(fit_rf)
 
-predictions <- predict(fit.rf, test)
+predictions <- predict(fit_rf, test)
 confusionMatrix(predictions, test$Type)
+
