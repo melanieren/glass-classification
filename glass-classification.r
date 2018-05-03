@@ -3,7 +3,6 @@ library(readr)
 data <- read.csv("data/glass.csv")
 
 # Install packages
-install.packages("caret")
 library(caret)
 
 # Overview of the dataset
@@ -26,22 +25,13 @@ for(i in 1:9) {
 
 # Multivariate
 # Correlation plot 
-install.packages("corrplot")
 library(corrplot)
 correlations <- cor(data[,1:9])
-corrplot(correlations, method="circle")
+dev.off()
+corrplot(correlations, method="circle", tl.cex=0.8)
 
 # Scatterplot matrix by class
 pairs(Type~.,data=data,col=data$Type)
-
-# Density by class
-x <- data[,1:9]
-y <- data[,10]
-scales <- list(x=list(relation="free"), y=list(relation="free"))
-featurePlot(x=x, y=y, plot="density", scales=scales)
-
-# Boxplots by class
-featurePlot(x=x, y=y, plot="box")
 
 ## Prepare the data for modelling
 # Scale the column values, except for the Type column (output column)
