@@ -9,8 +9,8 @@ library(caret)
 head(data)
 summary(data)
 
-## Exploratory data analysis
-# Univariate
+### Exploratory data analysis
+## Univariate
 # Histogram
 par(mfrow=c(1,9))
 for(i in 1:9) {
@@ -23,12 +23,14 @@ for(i in 1:9) {
 	boxplot(data[,i], main=names(data)[i])
 }
 
-# Multivariate
+## Multivariate
 # Correlation plot 
 library(corrplot)
 correlations <- cor(data[,1:9])
 dev.off()
 corrplot(correlations, method="circle", tl.cex=0.8)
+# From the correlation plot, we can see that Ca has a strong positive correlation with 
+#   the refractive index, while Si has a negative correlation. 
 
 # Scatterplot matrix by class
 pairs(Type~.,data=data,col=data$Type)
@@ -98,7 +100,7 @@ results <- resamples(list(lda=fit_lda, cart=fit_cart, knn=fit_knn, svm=fit_svm, 
 summary(results)
 dotplot(results)
 
-# The best model based on accuracy 
+# The results show that the random forest model had the highest accuracy when predicting glass type
 print(fit_rf)
 
 predictions <- predict(fit_rf, test)
