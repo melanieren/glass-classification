@@ -14,13 +14,13 @@ summary(data)
 # Histogram
 par(mfrow=c(1,9))
 for(i in 1:9) {
-	hist(data[,i], main=names(data)[i])
+  hist(data[,i], main=names(data)[i])
 }
 
 # Boxplot 
 par(mfrow=c(1,9))
 for(i in 1:9) {
-	boxplot(data[,i], main=names(data)[i])
+  boxplot(data[,i], main=names(data)[i])
 }
 
 ## Multivariate
@@ -51,7 +51,7 @@ scaled_data <- cbind(scaled_data_input, Type=data$Type)
 head(scaled_data)
 
 # Create train and test sets
-set.seed(30)
+set.seed(50)
 
 index <- sample.int(n = nrow(scaled_data), size = floor(0.75*nrow(scaled_data)), replace = F)
 
@@ -65,7 +65,7 @@ levels(test$Type) <- c("building_float", "building_non_float", "vehicle_float", 
 
 head(train)
 
-# Use cross-validation to avoid overfitting 
+# Use cross-validation to reduce overfitting 
 control <- trainControl(method="cv", number=10)
 metric <- "Accuracy"
 
@@ -103,6 +103,14 @@ dotplot(results)
 # The results show that the random forest model had the highest accuracy when predicting glass type
 print(fit_rf)
 
+# Run the prediction algorithm on the test dataset
 predictions <- predict(fit_rf, test)
 confusionMatrix(predictions, test$Type)
 
+# The accuracy of the prediction was 81%
+# We can use caret to tune the parameters and see if it improves the prediction accuracy
+rf_tuned <- train(Type~., data=train, method="rf", tuneLength=8, metric=metric, trControl=control)
+print(rf_tuned)
+
+tuned_predictions <- predict(rf_tuned, test)
+confusionMatrix(tuned_predictions, test$Type) # Accuracy is now 83%
